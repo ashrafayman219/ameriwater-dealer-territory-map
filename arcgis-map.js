@@ -192,6 +192,9 @@ require([
             dealerToZip3s[dealer].push(zip3);
         });
         
+        console.log('=== RENDERER DEBUG ===');
+        console.log('Creating renderer for', Object.keys(dealerToZip3s).length, 'dealers');
+        
         // Create unique value info for EACH DEALER (not each ZIP!)
         // Use Arcade expression to extract ZIP3 and match to dealer
         Object.keys(dealerToZip3s).forEach(dealer => {
@@ -214,6 +217,11 @@ require([
                 symbol: symbol,
                 label: dealer
             });
+            
+            // Debug: Log first few dealers with their colors
+            if (Object.keys(dealerToZip3s).indexOf(dealer) < 5) {
+                console.log(`  Renderer: ${dealer} -> RGB(${rgb[0]}, ${rgb[1]}, ${rgb[2]}) from ${color}`);
+            }
         });
         
         // Create Arcade expression that extracts ZIP3 and maps to dealer
@@ -244,6 +252,7 @@ require([
         applyStateFilter();
         
         console.log('Efficient rendering applied for', currentView, 'view');
+        console.log('=== END RENDERER DEBUG ===');
     }
     
     // Create Arcade expression that maps ZIP5 -> ZIP3 -> Dealer using WHEN statement
@@ -464,6 +473,21 @@ ${conditions.join(',\n')},
         const zip3Mapping = createZip3Mapping();
         const territory = zip3 ? zip3Mapping[zip3] : null;
         
+        // Debug: Log what we're showing
+        console.log('=== POPUP DEBUG ===');
+        console.log('ZIP5:', zip5, '-> ZIP3:', zip3);
+        if (territory) {
+            console.log('Territory state:', territory.state);
+            console.log('Primary dealer:', territory.primary.dealer);
+            const dealer = getDealerForZip3(zip3);
+            const color = dealerColors[dealer];
+            const rgb = hslToRgb(color);
+            console.log('Displayed dealer:', dealer);
+            console.log('Dealer color HSL:', color);
+            console.log('Dealer color RGB:', `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`);
+        }
+        console.log('=== END POPUP DEBUG ===');
+        
         const modal = document.getElementById('customModal');
         const modalTitle = document.getElementById('modalTitle');
         const modalBody = document.getElementById('modalBody');
@@ -550,6 +574,7 @@ ${conditions.join(',\n')},
         currentView = 'primary';
         updateLayerRenderer();
         updateButtonStates('btnPrimary');
+        updateLegend();
         showNotification('Showing Primary Dealers', 'success');
     };
     
@@ -557,6 +582,7 @@ ${conditions.join(',\n')},
         currentView = 'secondary';
         updateLayerRenderer();
         updateButtonStates('btnSecondary');
+        updateLegend();
         showNotification('Showing Secondary Dealers', 'success');
     };
     
@@ -564,6 +590,7 @@ ${conditions.join(',\n')},
         currentView = 'third';
         updateLayerRenderer();
         updateButtonStates('btnThird');
+        updateLegend();
         showNotification('Showing Third Dealers', 'success');
     };
     
@@ -571,6 +598,7 @@ ${conditions.join(',\n')},
         currentView = 'all';
         updateLayerRenderer();
         updateButtonStates('btnShowAll');
+        updateLegend();
         showNotification('Showing All Layers', 'success');
     };
     
@@ -637,12 +665,16 @@ ${conditions.join(',\n')},
 
 // Helper function to convert HSL to RGB
 function hslToRgb(hsl) {
-    const match = hsl.match(/hsl\((\d+),\s*(\d+)%,\s*(\d+)%\)/);
-    if (!match) return [128, 128, 128];
+    // Updated regex to handle decimal numbers
+    const match = hsl.match(/hsl\(([\d.]+),\s*([\d.]+)%,\s*([\d.]+)%\)/);
+    if (!match) {
+        console.warn('Failed to parse HSL:', hsl);
+        return [128, 128, 128];
+    }
     
-    let h = parseInt(match[1]) / 360;
-    let s = parseInt(match[2]) / 100;
-    let l = parseInt(match[3]) / 100;
+    let h = parseFloat(match[1]) / 360;
+    let s = parseFloat(match[2]) / 100;
+    let l = parseFloat(match[3]) / 100;
     
     let r, g, b;
     
@@ -728,6 +760,10 @@ function updateLegend() {
     const legendContent = document.getElementById('legendContent');
     let html = '';
     
+    console.log('=== LEGEND DEBUG ===');
+    console.log('Current view:', currentView);
+    console.log('Selected states:', Array.from(selectedStates));
+    
     // Get dealers that match current view and state filter
     const zip3Mapping = createZip3Mapping();
     const visibleDealers = new Map(); // Use Map to track dealer and their first occurrence color
@@ -742,22 +778,36 @@ function updateLegend() {
         
         const dealer = getDealerForZip3(zip3);
         if (dealer && !visibleDealers.has(dealer)) {
-            // Store dealer with its color
-            visibleDealers.set(dealer, dealerColors[dealer]);
+            // Store dealer with its color and RGB conversion
+            const hslColor = dealerColors[dealer];
+            const rgb = hslToRgb(hslColor);
+            visibleDealers.set(dealer, {
+                hsl: hslColor,
+                rgb: rgb
+            });
         }
     });
     
     // Sort dealers alphabetically
     const dealers = Array.from(visibleDealers.keys()).sort();
     
+    console.log('Legend showing', dealers.length, 'dealers:');
+    
     dealers.forEach((dealer) => {
-        const color = visibleDealers.get(dealer);
+        const colorInfo = visibleDealers.get(dealer);
+        const color = colorInfo.hsl;
         html += `
             <div class="legend-item">
                 <div class="legend-color" style="background-color: ${color}"></div>
                 <div class="legend-text">${dealer}</div>
             </div>
         `;
+        
+        // Debug: Show both HSL and RGB
+        console.log(`  ${dealer}:`);
+        console.log(`    HSL: ${color}`);
+        console.log(`    RGB: rgb(${colorInfo.rgb[0]}, ${colorInfo.rgb[1]}, ${colorInfo.rgb[2]})`);
+        console.log(`    Map uses: rgba(${colorInfo.rgb[0]}, ${colorInfo.rgb[1]}, ${colorInfo.rgb[2]}, 0.7)`);
     });
     
     if (dealers.length === 0) {
@@ -765,12 +815,7 @@ function updateLegend() {
     }
     
     legendContent.innerHTML = html;
-    
-    // Debug: Log visible dealers and their colors
-    console.log('Legend updated with', dealers.length, 'dealers');
-    dealers.forEach(dealer => {
-        console.log(`  ${dealer}: ${visibleDealers.get(dealer)}`);
-    });
+    console.log('=== END LEGEND DEBUG ===');
 }
 
 // Update button states
