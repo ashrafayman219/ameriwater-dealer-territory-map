@@ -3,49 +3,86 @@
                          Professional GIS Solution
 ================================================================================
 
-WHAT'S NEW:
------------
-✓ Real ZIP code boundaries (not markers!) loaded from ArcGIS REST API
+WHAT'S NEW (February 2026):
+---------------------------
+✓ FIXED: Color matching between map and legend - now perfect!
+✓ FIXED: Clear button error - works flawlessly
+✓ FIXED: Map hanging/spinning issue - super fast now
+✓ FIXED: Grey map when filtering states - colors show properly
+✓ NEW: State filtering with zoom functionality
+✓ NEW: Dynamic legend updates when switching dealer types
+✓ Real ZIP code boundaries loaded from ArcGIS REST API
 ✓ Professional GIS-style UI with smooth animations
-✓ Dark theme with gradient effects
-✓ Fast loading - only loads ZIP codes you need
-✓ No large files to download
-✓ CSV upload feature works perfectly
+✓ Fast loading with optimized rendering
 
 HOW TO USE:
 -----------
 1. Open "index.html" in your web browser (Chrome or Firefox recommended)
 2. Wait 10-30 seconds while ZIP boundaries load from ArcGIS
 3. Click on any colored territory to see dealer details
-4. Use the buttons at top to switch between dealer layers
-5. Hover over territories for quick information
+4. Use the layer buttons (left panel) to switch between dealer types
+5. Use state filter (bottom left) to focus on specific states
+6. Legend (bottom right) shows only visible dealers with matching colors
 
-FEATURES:
----------
+MAIN FEATURES:
+--------------
 ✓ Real ZIP code boundaries with accurate geographic shapes
-✓ Smooth animations and professional GIS design
-✓ Interactive popups with full dealer information
-✓ Color-coded territories with animated legend
+✓ State filtering - click states to filter, click again to remove
+✓ Auto-zoom to selected states
+✓ Color-coded territories with matching legend
 ✓ Layer switching (Primary, Secondary, Third, Show All)
+✓ Interactive popups with full dealer information
 ✓ CSV upload to update territories instantly
-✓ Dark theme optimized for data visualization
+✓ Professional dark theme optimized for data visualization
 ✓ Responsive design works on all devices
+
+STATE FILTERING:
+----------------
+1. Click any state chip (bottom left panel) to filter by that state
+2. Click multiple states to view several at once
+3. Map automatically zooms to selected states
+4. Legend updates to show only dealers in selected states
+5. Click "Clear" button or click state again to remove filter
+6. Colors remain consistent across all views
+
+DEALER TYPE SWITCHING:
+----------------------
+1. Primary Dealers - Shows primary dealer assignments
+2. Secondary Dealers - Shows secondary dealer assignments
+3. Third Dealers - Shows third dealer assignments
+4. Show All Layers - Shows all dealers (primary view)
+5. Legend automatically updates when switching types
+6. Colors always match between map and legend
 
 HOW TO UPDATE TERRITORIES:
 --------------------------
 1. Edit your Excel file: __AMERIWATER DEALER ZIP CODE COVERAGE.xlsx
 2. Save it as CSV format (File > Save As > CSV)
-3. In the map, click the "Upload CSV" button (orange button, top right)
+3. In the map, click the "Upload CSV" button (in left panel)
 4. Select your CSV file
 5. Map automatically reloads with new data - Done!
 
-TECHNICAL DETAILS:
-------------------
-- Uses ArcGIS REST API for ZIP code boundaries
-- Loads only the ZIP codes present in your data
-- No large files stored locally
-- All processing happens in your browser
-- Data stays on your computer (not sent to servers)
+CSV FORMAT:
+-----------
+Required columns (in order):
+1. ZIP3 (3-digit ZIP code prefix, e.g., "900")
+2. State (2-letter code, e.g., "CA")
+3. Primary Dealer Name
+4. Primary Account Number
+5. Secondary Dealer Name (optional)
+6. Secondary Account Number (optional)
+7. Third Dealer Name (optional)
+8. Third Account Number (optional)
+
+TECHNICAL IMPROVEMENTS:
+-----------------------
+✓ Fixed HSL to RGB conversion (was causing grey colors)
+✓ Optimized state filtering (uses queryExtent instead of queryFeatures)
+✓ Separated rendering from filtering for better performance
+✓ Enhanced error handling to prevent infinite loading
+✓ Added comprehensive debug logging (F12 console)
+✓ Improved color generation algorithm
+✓ Better memory management
 
 UI/UX FEATURES:
 ---------------
@@ -57,18 +94,43 @@ UI/UX FEATURES:
 ✓ Custom styled popups and legends
 ✓ Responsive scrollbars
 ✓ Icon-enhanced interface
+✓ Loading overlays for better feedback
 
-LAYER STYLES:
+MAP CONTROLS:
 -------------
-- Primary Dealers: Solid borders, full opacity
-- Secondary Dealers: Dashed borders (8-4 pattern)
-- Third Dealers: Dotted borders (2-4 pattern)
-- All layers can be viewed simultaneously
+Top Right Corner:
+- Fullscreen button
+- Zoom in/out buttons
+- Home button (reset view)
+
+Left Panel:
+- Primary Dealers button
+- Secondary Dealers button
+- Third Dealers button
+- Show All Layers button
+- Upload CSV button
+
+Bottom Left:
+- State filter chips (click to filter)
+- Clear button (when states selected)
+
+Bottom Right:
+- Legend with dealer colors
+- Auto-updates based on view and filters
 
 TROUBLESHOOTING:
 ----------------
 Problem: Map takes long to load
 Solution: Normal - loading real ZIP boundaries from ArcGIS (30-60 seconds)
+
+Problem: Colors don't match between map and legend
+Solution: FIXED! Hard refresh (Ctrl+Shift+R) to clear cache
+
+Problem: Map hangs when filtering states
+Solution: FIXED! Now uses optimized queries
+
+Problem: Clear button shows error
+Solution: FIXED! Button now works perfectly
 
 Problem: Some territories don't appear
 Solution: ArcGIS may not have all ZIP codes, or ZIP3 doesn't exist
@@ -77,7 +139,16 @@ Problem: CSV upload shows error
 Solution: Make sure CSV format matches original (8 columns minimum)
 
 Problem: Colors hard to see
-Solution: Zoom in, click territories for details
+Solution: Zoom in, click territories for details, or adjust screen brightness
+
+DEBUG MODE:
+-----------
+Open browser console (F12) to see detailed information:
+- Which dealers are being rendered
+- RGB color values for each dealer
+- State filtering operations
+- ZIP code assignments
+- Performance metrics
 
 BROWSER REQUIREMENTS:
 ---------------------
@@ -94,11 +165,45 @@ ADVANTAGES:
 ✓ Professional GIS appearance
 ✓ Fast and responsive
 ✓ Easy to update via CSV upload
+✓ State filtering with auto-zoom
+✓ Perfect color matching
 ✓ No scripts for client to run
+✓ Optimized performance
 
-VERSION: 2.0 - Professional GIS Edition
-LAST UPDATED: February 2026
+KNOWN LIMITATIONS:
+------------------
+- Requires internet connection for ArcGIS API
+- Initial load takes 30-60 seconds
+- Some rare ZIP codes may not have boundaries in ArcGIS
+- Uses 3-digit ZIP codes (can be adapted for 5-digit if needed)
+
+FUTURE ENHANCEMENTS (Optional):
+-------------------------------
+- 5-digit ZIP code support (see FIXES_AND_IMPROVEMENTS.md)
+- Export filtered view as image
+- Print-friendly version
+- Custom color schemes
+- Territory statistics dashboard
+
+VERSION: 3.0 - Color-Fixed Edition
+LAST UPDATED: February 5, 2026
 
 ================================================================================
                         OPEN INDEX.HTML TO START
 ================================================================================
+
+QUICK START:
+1. Double-click index.html
+2. Wait for map to load
+3. Click California (CA) in state filter
+4. See 3 dealers with matching colors
+5. Switch to Secondary Dealers to see different assignments
+6. Click Clear to return to full view
+
+For technical details, see:
+- FIXES_AND_IMPROVEMENTS.md - Technical documentation
+- COLOR_MATCHING_FIX.md - Color fix details
+- DEBUG_COLOR_MATCHING.md - Debug guide
+
+================================================================================
+
