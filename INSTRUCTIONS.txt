@@ -1,0 +1,104 @@
+================================================================================
+                    AMERIWATER DEALER TERRITORY MAP
+                         Professional GIS Solution
+================================================================================
+
+WHAT'S NEW:
+-----------
+✓ Real ZIP code boundaries (not markers!) loaded from ArcGIS REST API
+✓ Professional GIS-style UI with smooth animations
+✓ Dark theme with gradient effects
+✓ Fast loading - only loads ZIP codes you need
+✓ No large files to download
+✓ CSV upload feature works perfectly
+
+HOW TO USE:
+-----------
+1. Open "index.html" in your web browser (Chrome or Firefox recommended)
+2. Wait 10-30 seconds while ZIP boundaries load from ArcGIS
+3. Click on any colored territory to see dealer details
+4. Use the buttons at top to switch between dealer layers
+5. Hover over territories for quick information
+
+FEATURES:
+---------
+✓ Real ZIP code boundaries with accurate geographic shapes
+✓ Smooth animations and professional GIS design
+✓ Interactive popups with full dealer information
+✓ Color-coded territories with animated legend
+✓ Layer switching (Primary, Secondary, Third, Show All)
+✓ CSV upload to update territories instantly
+✓ Dark theme optimized for data visualization
+✓ Responsive design works on all devices
+
+HOW TO UPDATE TERRITORIES:
+--------------------------
+1. Edit your Excel file: __AMERIWATER DEALER ZIP CODE COVERAGE.xlsx
+2. Save it as CSV format (File > Save As > CSV)
+3. In the map, click the "Upload CSV" button (orange button, top right)
+4. Select your CSV file
+5. Map automatically reloads with new data - Done!
+
+TECHNICAL DETAILS:
+------------------
+- Uses ArcGIS REST API for ZIP code boundaries
+- Loads only the ZIP codes present in your data
+- No large files stored locally
+- All processing happens in your browser
+- Data stays on your computer (not sent to servers)
+
+UI/UX FEATURES:
+---------------
+✓ Animated gradient header
+✓ Smooth button hover effects
+✓ Glowing active state indicators
+✓ Slide-in animations for controls
+✓ Professional dark theme
+✓ Custom styled popups and legends
+✓ Responsive scrollbars
+✓ Icon-enhanced interface
+
+LAYER STYLES:
+-------------
+- Primary Dealers: Solid borders, full opacity
+- Secondary Dealers: Dashed borders (8-4 pattern)
+- Third Dealers: Dotted borders (2-4 pattern)
+- All layers can be viewed simultaneously
+
+TROUBLESHOOTING:
+----------------
+Problem: Map takes long to load
+Solution: Normal - loading real ZIP boundaries from ArcGIS (30-60 seconds)
+
+Problem: Some territories don't appear
+Solution: ArcGIS may not have all ZIP codes, or ZIP3 doesn't exist
+
+Problem: CSV upload shows error
+Solution: Make sure CSV format matches original (8 columns minimum)
+
+Problem: Colors hard to see
+Solution: Zoom in, click territories for details
+
+BROWSER REQUIREMENTS:
+---------------------
+- Chrome (recommended)
+- Firefox
+- Edge
+- Safari
+- Internet connection required (for ArcGIS API)
+
+ADVANTAGES:
+-----------
+✓ No 1.7GB file to download
+✓ Real geographic boundaries
+✓ Professional GIS appearance
+✓ Fast and responsive
+✓ Easy to update via CSV upload
+✓ No scripts for client to run
+
+VERSION: 2.0 - Professional GIS Edition
+LAST UPDATED: February 2026
+
+================================================================================
+                        OPEN INDEX.HTML TO START
+================================================================================

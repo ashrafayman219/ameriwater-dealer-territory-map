@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <title>AmeriWater Dealer Territory Map</title>
+    <link rel="stylesheet" href="https://js.arcgis.com/4.32/esri/themes/light/main.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <script src="https://js.arcgis.com/4.32/"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --primary-blue: #2563eb;
+            --dark-gray: #1e293b;
+            --light-gray: #f1f5f9;
+            --white: #ffffff;
+            --text-dark: #0f172a;
+            --text-gray: #64748b;
+            --border-color: #e2e8f0;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            overflow: hidden;
+            background: var(--light-gray);
+        }
+        
+        #viewDiv {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+        }
+        
+        /* Header */
+        .app-header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: var(--white);
+            padding: 16px 24px;
+            z-index: 100;
+            box-shadow: var(--shadow);
+            border-bottom: 3px solid var(--primary-blue);
+        }
+        
+        .app-header h1 {
+            color: var(--text-dark);
+            font-size: 20px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 0;
+        }
+        
+        .app-header h1 i {
+            color: var(--primary-blue);
+            font-size: 24px;
+        }
+        
+        /* Custom Map Controls */
+        .map-controls {
+            position: absolute;
+            top: 80px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 99;
+        }
+        
+        .control-btn {
+            width: 40px;
+            height: 40px;
+            background: var(--white);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            color: var(--text-dark);
+            transition: all 0.2s;
+            box-shadow: var(--shadow);
+        }
+        
+        .control-btn:hover {
+            background: var(--primary-blue);
+            color: var(--white);
+            border-color: var(--primary-blue);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .control-btn:active {
+            transform: translateY(0);
+        }
+        
+        /* Control Panel */
+        .control-panel {
+            position: absolute;
+            top: 80px;
+            left: 20px;
+            background: var(--white);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: var(--shadow-lg);
+            z-index: 99;
+            min-width: 260px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .control-panel h3 {
+            color: var(--text-dark);
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--light-gray);
+        }
+        
+        .control-panel h3 i {
+            color: var(--primary-blue);
+        }
+        
+        .layer-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .btn {
+            padding: 10px 16px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            background: var(--white);
+            color: var(--text-dark);
+        }
+        
+        .btn:hover {
+            background: var(--light-gray);
+            border-color: var(--primary-blue);
+        }
+        
+        .btn.active {
+            background: var(--primary-blue);
+            color: var(--white);
+            border-color: var(--primary-blue);
+        }
+        
+        .btn i {
+            font-size: 14px;
+        }
+        
+        .btn-upload {
+            background: var(--dark-gray);
+            color: var(--white);
+            border-color: var(--dark-gray);
+            margin-top: 12px;
+            position: relative;
+        }
+        
+        .btn-upload:hover {
+            background: var(--text-dark);
+            border-color: var(--text-dark);
+        }
+        
+        .btn-upload input[type="file"] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+        
+        /* Legend */
+        .legend-panel {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: var(--white);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: var(--shadow-lg);
+            z-index: 99;
+            max-width: 280px;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+        }
+        
+        .legend-panel h3 {
+            color: var(--text-dark);
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--light-gray);
+        }
+        
+        .legend-panel h3 i {
+            color: var(--primary-blue);
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+            padding: 8px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        
+        .legend-item:hover {
+            background: var(--light-gray);
+        }
+        
+        .legend-color {
+            width: 32px;
+            height: 20px;
+            margin-right: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 3px;
+        }
+        
+        .legend-text {
+            color: var(--text-dark);
+            font-size: 13px;
+            font-weight: 500;
+        }
+        
+        /* State Filter Panel */
+        .state-filter-panel {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: var(--white);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: var(--shadow-lg);
+            z-index: 99;
+            max-width: 320px;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+        }
+        
+        .state-filter-panel h3 {
+            color: var(--text-dark);
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--light-gray);
+        }
+        
+        .state-filter-panel h3 .title-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .state-filter-panel h3 i {
+            color: var(--primary-blue);
+        }
+        
+        .clear-filter-btn {
+            background: none;
+            border: none;
+            color: var(--text-gray);
+            font-size: 12px;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+        
+        .clear-filter-btn:hover {
+            background: var(--light-gray);
+            color: var(--primary-blue);
+        }
+        
+        .state-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+        
+        .state-chip {
+            padding: 8px 12px;
+            background: var(--light-gray);
+            border: 2px solid transparent;
+            border-radius: 6px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+        
+        .state-chip:hover {
+            background: var(--white);
+            border-color: var(--primary-blue);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+        
+        .state-chip.active {
+            background: var(--primary-blue);
+            color: var(--white);
+            border-color: var(--primary-blue);
+        }
+        
+        .state-chip.disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+        
+        .state-chip.disabled:hover {
+            transform: none;
+            box-shadow: none;
+            border-color: transparent;
+        }
+        
+        /* Custom Modal Popup */
+        .custom-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            animation: fadeIn 0.2s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .modal-content {
+            background: var(--white);
+            border-radius: 8px;
+            box-shadow: var(--shadow-lg);
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s;
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-dark);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: var(--text-gray);
+            cursor: pointer;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        
+        .modal-close:hover {
+            background: var(--light-gray);
+            color: var(--text-dark);
+        }
+        
+        .modal-body {
+            padding: 20px;
+        }
+        
+        .info-row {
+            margin: 12px 0;
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--light-gray);
+        }
+        
+        .info-label {
+            color: var(--text-gray);
+            font-weight: 500;
+            font-size: 14px;
+        }
+        
+        .info-value {
+            color: var(--text-dark);
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .dealer-card {
+            margin: 16px 0;
+            padding: 16px;
+            background: var(--light-gray);
+            border-radius: 6px;
+            border-left: 4px solid var(--primary-blue);
+        }
+        
+        .dealer-card.secondary {
+            border-left-color: var(--dark-gray);
+        }
+        
+        .dealer-card.third {
+            border-left-color: var(--text-gray);
+        }
+        
+        .dealer-card-title {
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .dealer-card-name {
+            color: var(--text-dark);
+            font-size: 15px;
+            margin-bottom: 4px;
+        }
+        
+        .dealer-card-account {
+            color: var(--text-gray);
+            font-size: 12px;
+        }
+        
+        /* Loading Screen */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--white);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.3s;
+        }
+        
+        .loading-screen.fade-out {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .loading-content {
+            text-align: center;
+        }
+        
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid var(--light-gray);
+            border-top-color: var(--primary-blue);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 16px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .loading-text {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--text-dark);
+        }
+        
+        /* State Filter Loading Overlay */
+        .filter-loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            /* background: rgba(255, 255, 255, 0.85); */
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            /* backdrop-filter: blur(2px); */
+        }
+        
+        .filter-loading-overlay.active {
+            display: flex;
+        }
+        
+        .filter-loading-content {
+            text-align: center;
+            background: var(--white);
+            padding: 30px 40px;
+            border-radius: 8px;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border-color);
+        }
+        
+        .filter-loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--light-gray);
+            border-top-color: var(--primary-blue);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 16px;
+        }
+        
+        .filter-loading-text {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-dark);
+        }
+        
+        /* Notification */
+        .notification {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            background: var(--white);
+            padding: 16px 20px;
+            border-radius: 6px;
+            box-shadow: var(--shadow-lg);
+            z-index: 3000;
+            display: none;
+            animation: slideInRight 0.3s;
+            border: 1px solid var(--border-color);
+            color: var(--text-dark);
+            font-weight: 500;
+            max-width: 320px;
+            border-left: 4px solid var(--primary-blue);
+        }
+        
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        .notification.error {
+            border-left-color: #dc2626;
+        }
+        
+        /* Scrollbar */
+        .legend-panel::-webkit-scrollbar,
+        .modal-content::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .legend-panel::-webkit-scrollbar-track,
+        .modal-content::-webkit-scrollbar-track {
+            background: var(--light-gray);
+        }
+        
+        .legend-panel::-webkit-scrollbar-thumb,
+        .modal-content::-webkit-scrollbar-thumb {
+            background: var(--text-gray);
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="loading-screen">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <div class="loading-text">Loading Dealer Territory Map...</div>
+        </div>
+    </div>
+
+    <!-- App Header -->
+    <div class="app-header">
+        <h1><i class="fas fa-map-marked-alt"></i> AmeriWater Dealer Territory Map</h1>
+    </div>
+
+    <!-- Main Map Container -->
+    <div id="viewDiv"></div>
+
+    <!-- Map Controls -->
+    <div class="map-controls">
+        <button class="control-btn" id="fullscreenBtn" title="Fullscreen">
+            <i class="fas fa-expand"></i>
+        </button>
+        <button class="control-btn" id="zoomInBtn" title="Zoom In">
+            <i class="fas fa-plus"></i>
+        </button>
+        <button class="control-btn" id="zoomOutBtn" title="Zoom Out">
+            <i class="fas fa-minus"></i>
+        </button>
+        <button class="control-btn" id="homeBtn" title="Reset View">
+            <i class="fas fa-home"></i>
+        </button>
+    </div>
+
+    <!-- Control Panel -->
+    <div class="control-panel">
+        <h3><i class="fas fa-layer-group"></i> View Layers</h3>
+        <div class="layer-buttons">
+            <button class="btn active" id="btnPrimary">
+                <i class="fas fa-star"></i>
+                <span>Primary Dealers</span>
+            </button>
+            <button class="btn" id="btnSecondary">
+                <i class="fas fa-sync-alt"></i>
+                <span>Secondary Dealers</span>
+            </button>
+            <button class="btn" id="btnThird">
+                <i class="fas fa-medal"></i>
+                <span>Third Dealers</span>
+            </button>
+            <button class="btn" id="btnShowAll">
+                <i class="fas fa-eye"></i>
+                <span>Show All Layers</span>
+            </button>
+            <button class="btn btn-upload">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <span>Upload CSV</span>
+                <input type="file" id="csvUpload" accept=".csv">
+            </button>
+        </div>
+    </div>
+
+    <!-- Legend Panel -->
+    <div class="legend-panel">
+        <h3><i class="fas fa-palette"></i> Dealers</h3>
+        <div id="legendContent">
+            <div class="legend-item">Loading...</div>
+        </div>
+    </div>
+
+    <!-- State Filter Panel -->
+    <div class="state-filter-panel">
+        <h3>
+            <span class="title-left">
+                <i class="fas fa-map"></i> Filter by State
+            </span>
+            <button class="clear-filter-btn" id="clearStateFilter" style="display: none;">
+                <i class="fas fa-times"></i> Clear
+            </button>
+        </h3>
+        <div id="stateGrid" class="state-grid">
+            <!-- States will be dynamically added -->
+        </div>
+    </div>
+
+    <!-- Custom Modal -->
+    <div id="customModal" class="custom-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="modalTitle">Territory Information</div>
+                <button class="modal-close" id="modalClose">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Content will be dynamically added -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div id="notification" class="notification"></div>
+
+    <!-- State Filter Loading Overlay -->
+    <div id="filterLoadingOverlay" class="filter-loading-overlay">
+        <div class="filter-loading-content">
+            <div class="filter-loading-spinner"></div>
+            <div class="filter-loading-text">Loading map view...</div>
+        </div>
+    </div>
+
+    <script src="data.js"></script>
+    <script src="arcgis-map.js"></script>
+</body>
+</html>
