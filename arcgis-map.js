@@ -180,15 +180,9 @@ require([
         const uniqueValueInfos = [];
         const dealerToZip3s = {};
         
-        // Group ZIP3s by dealer (filtered by selected states if any)
+        // Group ZIP3s by dealer (NO state filtering in renderer - we'll use definition expression)
         Object.keys(zip3Mapping).forEach(zip3 => {
             const territory = zip3Mapping[zip3];
-            
-            // Filter by selected states if any are selected
-            if (selectedStates.size > 0 && !selectedStates.has(territory.state)) {
-                return;
-            }
-            
             const dealer = getDealerForZip3(zip3);
             if (!dealer) return;
             
@@ -227,11 +221,11 @@ require([
         
         console.log(`Created renderer with ${uniqueValueInfos.length} unique values (one per dealer) - EFFICIENT!`);
         
-        // Create default symbol for unmatched ZIPs
+        // Create default symbol for unmatched ZIPs - make it more visible
         const defaultSymbol = new SimpleFillSymbol({
-            color: [220, 220, 220, 0.2],
+            color: [240, 240, 240, 0.4],
             outline: new SimpleLineSymbol({
-                color: [180, 180, 180, 0.5],
+                color: [200, 200, 200, 0.6],
                 width: 0.5
             })
         });
@@ -255,15 +249,9 @@ require([
     // Create Arcade expression that maps ZIP5 -> ZIP3 -> Dealer using WHEN statement
     function createArcadeExpression(zip3Mapping) {
         // Build WHEN conditions (more efficient than if/else chain)
+        // NO state filtering here - that's handled by definition expression
         const conditions = [];
         Object.keys(zip3Mapping).forEach(zip3 => {
-            const territory = zip3Mapping[zip3];
-            
-            // Filter by selected states if any are selected
-            if (selectedStates.size > 0 && !selectedStates.has(territory.state)) {
-                return;
-            }
-            
             const dealer = getDealerForZip3(zip3);
             if (!dealer) return;
             // Escape single quotes in dealer names
@@ -343,7 +331,8 @@ ${conditions.join(',\n')},
         showFilterLoading();
         
         updateStateChips();
-        updateLayerRenderer();
+        // Only update filter, not the entire renderer
+        applyStateFilter();
         updateLegend();
         
         // Show/hide clear button
@@ -354,7 +343,7 @@ ${conditions.join(',\n')},
         if (selectedStates.size > 0) {
             setTimeout(() => {
                 zoomToStates();
-            }, 500);
+            }, 300);
             showNotification(`Filtered by ${selectedStates.size} state(s)`, 'success');
         } else {
             // Return to home extent if no states selected
@@ -374,61 +363,44 @@ ${conditions.join(',\n')},
         }
     }
     
-    // Zoom to selected states
+    // Zoom to selected states - optimized with extent query only
     function zoomToStates() {
         if (!zipLayer || selectedStates.size === 0) {
             hideFilterLoading();
             return;
         }
         
-        // Build query for selected states
+        // Build query for selected states - use queryExtent for better performance
         const stateList = Array.from(selectedStates).map(s => `'${s}'`).join(',');
         const query = zipLayer.createQuery();
         query.where = `STATE IN (${stateList})`;
-        query.returnGeometry = true;
-        query.outFields = ["*"];
         
-        console.log('Querying features for states:', Array.from(selectedStates));
+        console.log('Querying extent for states:', Array.from(selectedStates));
         
-        // Query features and zoom to extent
-        zipLayer.queryFeatures(query).then(function(results) {
-            console.log('Query returned', results.features.length, 'features');
+        // Use queryExtent instead of queryFeatures - much faster!
+        zipLayer.queryExtent(query).then(function(results) {
+            console.log('Query returned extent with', results.count, 'features');
             
-            if (results.features.length > 0) {
-                // Get extent of all features
-                let extent = null;
-                results.features.forEach(feature => {
-                    if (feature.geometry && feature.geometry.extent) {
-                        if (!extent) {
-                            extent = feature.geometry.extent.clone();
-                        } else {
-                            extent = extent.union(feature.geometry.extent);
-                        }
-                    }
-                });
-                
-                if (extent) {
-                    console.log('Zooming to extent:', extent);
-                    // Zoom to extent with padding
-                    view.goTo(extent.expand(1.2), {
-                        duration: 1000,
-                        easing: "ease-in-out"
-                    }).then(() => {
-                        hideFilterLoading();
-                    }).catch(function(error) {
-                        console.error("Error in goTo:", error);
-                        hideFilterLoading();
-                    });
-                } else {
+            if (results.extent) {
+                console.log('Zooming to extent');
+                // Zoom to extent with padding
+                view.goTo(results.extent.expand(1.2), {
+                    duration: 1000,
+                    easing: "ease-in-out"
+                }).then(() => {
                     hideFilterLoading();
-                }
+                }).catch(function(error) {
+                    console.error("Error in goTo:", error);
+                    hideFilterLoading();
+                });
             } else {
-                console.warn('No features found for selected states');
+                console.warn('No extent found for selected states');
                 hideFilterLoading();
             }
         }).catch(function(error) {
-            console.error("Error querying features:", error);
+            console.error("Error querying extent:", error);
             hideFilterLoading();
+            showNotification('Error zooming to states', 'error');
         });
     }
     
@@ -446,14 +418,15 @@ ${conditions.join(',\n')},
     }
     
     // Clear all state filters
-    function clearStateFilter() {
+    window.clearStateFilter = function() {
         selectedStates.clear();
         
         // Show loading overlay
         showFilterLoading();
         
         updateStateChips();
-        updateLayerRenderer();
+        // Only update filter, not the entire renderer
+        applyStateFilter();
         updateLegend();
         
         const clearBtn = document.getElementById('clearStateFilter');
@@ -474,7 +447,7 @@ ${conditions.join(',\n')},
         }
         
         showNotification('Filter cleared - showing all states', 'success');
-    }
+    };
     
     // Update layer rendering when view changes
     function updateLayerRenderer() {
@@ -757,7 +730,7 @@ function updateLegend() {
     
     // Get dealers that match current view and state filter
     const zip3Mapping = createZip3Mapping();
-    const visibleDealers = new Set();
+    const visibleDealers = new Map(); // Use Map to track dealer and their first occurrence color
     
     Object.keys(zip3Mapping).forEach(zip3 => {
         const territory = zip3Mapping[zip3];
@@ -768,16 +741,17 @@ function updateLegend() {
         }
         
         const dealer = getDealerForZip3(zip3);
-        if (dealer) {
-            visibleDealers.add(dealer);
+        if (dealer && !visibleDealers.has(dealer)) {
+            // Store dealer with its color
+            visibleDealers.set(dealer, dealerColors[dealer]);
         }
     });
     
     // Sort dealers alphabetically
-    const dealers = Array.from(visibleDealers).sort();
+    const dealers = Array.from(visibleDealers.keys()).sort();
     
     dealers.forEach((dealer) => {
-        const color = dealerColors[dealer];
+        const color = visibleDealers.get(dealer);
         html += `
             <div class="legend-item">
                 <div class="legend-color" style="background-color: ${color}"></div>
@@ -791,6 +765,12 @@ function updateLegend() {
     }
     
     legendContent.innerHTML = html;
+    
+    // Debug: Log visible dealers and their colors
+    console.log('Legend updated with', dealers.length, 'dealers');
+    dealers.forEach(dealer => {
+        console.log(`  ${dealer}: ${visibleDealers.get(dealer)}`);
+    });
 }
 
 // Update button states
@@ -862,6 +842,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     document.getElementById('clearStateFilter').addEventListener('click', () => {
-        clearStateFilter();
+        window.clearStateFilter();
     });
 });
